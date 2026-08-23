@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  --animation-radiant-shine: radiant-shine 1.5s ease-in-out infinite;
+}
+
+@keyframes radiant-shine {
+  0% {
+    box-shadow: 0 0 8px 2px rgba(34, 197, 94, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 18px 5px rgba(34, 197, 94, 0.6),
+      0 0 28px 9px rgba(59, 130, 246, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 8px 2px rgba(34, 197, 94, 0.4);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.btn-fill-left {
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+  background-color: transparent;
+  border: 1px solid rgb(22, 163, 74);
+  color: rgb(22, 163, 74);
+}
+
+.btn-fill-left::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-color: rgb(22, 163, 74);
+  width: 0%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  transition: width 0.35s ease;
+}
+
+.btn-fill-left:hover::before {
+  width: 100%;
+}
+
+.btn-fill-left:hover {
+  color: white;
+}
