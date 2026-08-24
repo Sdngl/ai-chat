@@ -1,11 +1,18 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+
 import {
   createUserWithEmailAndPassword,
   updateProfile,
 } from "firebase/auth";
 
-import { auth } from "../firebase/Config";
+import {
+  doc,
+  setDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+
+import { auth, db } from "../firebase/Config";
 
 function Register() {
   const [name, setName] = useState("");
@@ -38,7 +45,7 @@ function Register() {
     try {
       setLoading(true);
 
-      // Create Firebase account
+      // 1. Create Firebase Authentication account
       const userCredential =
         await createUserWithEmailAndPassword(
           auth,
@@ -46,14 +53,23 @@ function Register() {
           password
         );
 
-      // Save user's name to Firebase Auth profile
-      await updateProfile(userCredential.user, {
+      const user = userCredential.user;
+
+      // 2. Save user's name to Firebase Auth profile
+      await updateProfile(user, {
         displayName: name.trim(),
       });
 
-      console.log("User created:", userCredential.user);
+      // 3. Create user profile in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        name: name.trim(),
+        email: user.email,
+        createdAt: serverTimestamp(),
+      });
 
-      // Go to login page after successful registration
+      console.log("User created:", user);
+
+      // 4. Go to login page after successful registration
       navigate("/login");
 
     } catch (error: any) {
@@ -67,12 +83,20 @@ function Register() {
           break;
 
         case "auth/invalid-email":
-          setError("Please enter a valid email address.");
+          setError(
+            "Please enter a valid email address."
+          );
           break;
 
         case "auth/weak-password":
           setError(
             "Password must be at least 6 characters."
+          );
+          break;
+
+        case "permission-denied":
+          setError(
+            "Unable to create your profile. Please try again."
           );
           break;
 
