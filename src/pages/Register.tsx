@@ -1,15 +1,89 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+
+import { auth } from "../firebase/Config";
 
 function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
-    navigate("/");
+
+    setError("");
+
+    // Basic validation
+    if (name.trim().length === 0) {
+      setError("Please enter your name.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Create Firebase account
+      const userCredential =
+        await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+
+      // Save user's name to Firebase Auth profile
+      await updateProfile(userCredential.user, {
+        displayName: name.trim(),
+      });
+
+      console.log("User created:", userCredential.user);
+
+      // Go to login page after successful registration
+      navigate("/login");
+
+    } catch (error: any) {
+      console.error(error);
+
+      switch (error.code) {
+        case "auth/email-already-in-use":
+          setError(
+            "An account with this email already exists."
+          );
+          break;
+
+        case "auth/invalid-email":
+          setError("Please enter a valid email address.");
+          break;
+
+        case "auth/weak-password":
+          setError(
+            "Password must be at least 6 characters."
+          );
+          break;
+
+        default:
+          setError(
+            "Something went wrong. Please try again."
+          );
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -23,7 +97,6 @@ function Register() {
         bg-zinc-50
       "
     >
-
       <form
         onSubmit={handleSubmit}
         className="
@@ -78,6 +151,24 @@ function Register() {
           </p>
 
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div
+            className="
+              rounded-xl
+              border
+              border-red-200
+              bg-red-50
+              px-4
+              py-3
+              text-sm
+              text-red-600
+            "
+          >
+            {error}
+          </div>
+        )}
 
         {/* Name */}
         <div className="flex flex-col gap-2">
@@ -190,6 +281,7 @@ function Register() {
         {/* Submit */}
         <button
           type="submit"
+          disabled={loading}
           className="
             rounded-xl
             bg-green-600
@@ -199,9 +291,11 @@ function Register() {
             text-white
             transition
             hover:bg-green-700
+            disabled:cursor-not-allowed
+            disabled:opacity-60
           "
         >
-          Sign Up
+          {loading ? "Creating account..." : "Sign Up"}
         </button>
 
         {/* Footer */}
@@ -216,7 +310,6 @@ function Register() {
         </p>
 
       </form>
-
     </main>
   );
 }

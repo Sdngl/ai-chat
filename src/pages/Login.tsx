@@ -1,14 +1,74 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { signInWithEmailAndPassword } from "firebase/auth";
+
+import { auth } from "../firebase/Config";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
-    navigate("/");
+
+    setError("");
+
+    try {
+      setLoading(true);
+
+      // Sign in with Firebase
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      console.log("Logged in user:", userCredential.user);
+
+      // Login successful
+      navigate("/");
+
+    } catch (error: any) {
+      console.error(error);
+
+      switch (error.code) {
+        case "auth/invalid-credential":
+          setError("Invalid email or password.");
+          break;
+
+        case "auth/user-not-found":
+          setError("No account exists with this email.");
+          break;
+
+        case "auth/wrong-password":
+          setError("Incorrect password.");
+          break;
+
+        case "auth/invalid-email":
+          setError("Please enter a valid email address.");
+          break;
+
+        case "auth/too-many-requests":
+          setError(
+            "Too many login attempts. Please try again later."
+          );
+          break;
+
+        default:
+          setError(
+            "Something went wrong. Please try again."
+          );
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -77,6 +137,24 @@ function Login() {
           </p>
 
         </div>
+
+        {/* Error */}
+        {error && (
+          <div
+            className="
+              rounded-xl
+              border
+              border-red-200
+              bg-red-50
+              px-4
+              py-3
+              text-sm
+              text-red-600
+            "
+          >
+            {error}
+          </div>
+        )}
 
         {/* Email */}
         <div className="flex flex-col gap-2">
@@ -182,6 +260,7 @@ function Login() {
         {/* Submit */}
         <button
           type="submit"
+          disabled={loading}
           className="
             rounded-xl
             bg-green-600
@@ -191,9 +270,11 @@ function Login() {
             text-white
             transition
             hover:bg-green-700
+            disabled:cursor-not-allowed
+            disabled:opacity-60
           "
         >
-          Log In
+          {loading ? "Logging in..." : "Log In"}
         </button>
 
         {/* Footer */}
