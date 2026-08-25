@@ -23,6 +23,9 @@ import Progress from "./pages/students/Progress";
 import Quiz from "./pages/students/Quiz";
 import Profile from "./pages/students/Profile";
 import Settings from "./pages/students/Setting";
+import QuizArena from "./pages/student/QuizArena";
+import SoloRun from "./pages/student/SoloRun";
+import QuizResults from "./pages/student/QuizResults";
 
 function App() {
   return (
@@ -54,6 +57,9 @@ function App() {
             <Route path="learning" element={<MyLearning />} />
             <Route path="progress" element={<Progress />} />
             <Route path="quiz" element={<Quiz />} />
+            <Route path="arena" element={<QuizArena />} />
+            <Route path="arena/solo" element={<SoloRun />} />
+            <Route path="arena/results" element={<QuizResults />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
           </Route>

@@ -5,6 +5,7 @@ function StudentLayout() {
     { name: "Dashboard", path: "/student/dashboard", icon: "⌂" },
     { name: "Courses", path: "/student/courses", icon: "▣" },
     { name: "My Learning", path: "/student/learning", icon: "◉" },
+    { name: "⚔️ Quiz Arena", path: "/student/arena", icon: "⚔️" },
     { name: "Progress", path: "/student/progress", icon: "↗" },
     { name: "Profile", path: "/student/profile", icon: "○" },
     { name: "Settings", path: "/student/settings", icon: "⚙" },
@@ -12,7 +13,7 @@ function StudentLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 border-r border-gray-200 bg-white lg:block">
+      <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-gray-200 bg-white">
         <div className="flex h-20 items-center border-b border-gray-100 px-7">
           <h1 className="text-2xl font-bold text-green-600">Learno</h1>
         </div>
@@ -51,7 +52,7 @@ function StudentLayout() {
         </div>
       </aside>
 
-      <main className="lg:ml-64">
+      <main className="ml-64">
         <header className="flex h-20 items-center justify-between border-b border-gray-200 bg-white px-5 sm:px-8">
           <div>
             <p className="text-sm text-gray-500">Learno</p>
