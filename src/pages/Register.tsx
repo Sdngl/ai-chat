@@ -1,9 +1,11 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import {
   createUserWithEmailAndPassword,
   updateProfile,
+  signOut,
 } from "firebase/auth";
 
 import {
@@ -46,64 +48,146 @@ function Register() {
       setLoading(true);
 
       // 1. Create Firebase Authentication account
+      console.log(
+        "1. Creating Firebase Authentication account..."
+      );
+
       const userCredential =
         await createUserWithEmailAndPassword(
           auth,
-          email,
+          email.trim(),
           password
         );
 
       const user = userCredential.user;
 
+      console.log(
+        "2. Firebase Auth account created:",
+        user.uid
+      );
+
       // 2. Save user's name to Firebase Auth profile
+      console.log(
+        "3. Updating Firebase Auth profile..."
+      );
+
       await updateProfile(user, {
         displayName: name.trim(),
       });
 
+      console.log(
+        "4. Firebase Auth profile updated."
+      );
+
       // 3. Create user profile in Firestore
-      await setDoc(doc(db, "users", user.uid), {
-        name: name.trim(),
-        email: user.email,
-        createdAt: serverTimestamp(),
-      });
+      try {
+        console.log(
+          "5. Creating Firestore user profile..."
+        );
 
-      console.log("User created:", user);
+        await setDoc(doc(db, "users", user.uid), {
+          name: name.trim(),
+          email: user.email,
+          createdAt: serverTimestamp(),
+        });
 
-      // 4. Go to login page after successful registration
+        console.log(
+          "6. Firestore user profile created."
+        );
+      } catch (firestoreError) {
+        console.error(
+          "🔥 FIRESTORE ERROR:",
+          firestoreError
+        );
+
+        throw firestoreError;
+      }
+
+      // 4. Firebase automatically signs the user in
+      // after createUserWithEmailAndPassword().
+      // Sign them out before sending them to Login.
+      console.log("7. Signing user out...");
+
+      await signOut(auth);
+
+      console.log(
+        "8. User signed out successfully."
+      );
+
+      // 5. Redirect to login
+      console.log(
+        "9. Redirecting to login..."
+      );
+
       navigate("/login");
 
-    } catch (error: any) {
-      console.error(error);
+    } catch (error: unknown) {
+      console.error(
+        "❌ REGISTRATION ERROR:",
+        error
+      );
 
-      switch (error.code) {
-        case "auth/email-already-in-use":
-          setError(
-            "An account with this email already exists."
-          );
-          break;
+      if (
+        error &&
+        typeof error === "object" &&
+        "code" in error
+      ) {
+        const firebaseError = error as {
+          code: string;
+          message?: string;
+        };
 
-        case "auth/invalid-email":
-          setError(
-            "Please enter a valid email address."
-          );
-          break;
+        console.error(
+          "Firebase error code:",
+          firebaseError.code
+        );
 
-        case "auth/weak-password":
-          setError(
-            "Password must be at least 6 characters."
-          );
-          break;
+        console.error(
+          "Firebase error message:",
+          firebaseError.message
+        );
 
-        case "permission-denied":
-          setError(
-            "Unable to create your profile. Please try again."
-          );
-          break;
+        switch (firebaseError.code) {
+          case "auth/email-already-in-use":
+            setError(
+              "An account with this email already exists."
+            );
+            break;
 
-        default:
-          setError(
-            "Something went wrong. Please try again."
-          );
+          case "auth/invalid-email":
+            setError(
+              "Please enter a valid email address."
+            );
+            break;
+
+          case "auth/weak-password":
+            setError(
+              "Password must be at least 6 characters."
+            );
+            break;
+
+          case "auth/network-request-failed":
+            setError(
+              "Network error. Please check your internet connection."
+            );
+            break;
+
+          case "permission-denied":
+          case "firestore/permission-denied":
+            setError(
+              "Unable to create your profile. Please check your Firestore permissions."
+            );
+            break;
+
+          default:
+            setError(
+              "Something went wrong. Please try again."
+            );
+        }
+      } else {
+        setError(
+          "Something went wrong. Please try again."
+        );
       }
     } finally {
       setLoading(false);
@@ -136,10 +220,8 @@ function Register() {
           shadow-xl
         "
       >
-
         {/* Logo */}
         <div className="flex flex-col items-center gap-3">
-
           <div
             className="
               flex
@@ -160,12 +242,10 @@ function Register() {
           <span className="text-2xl font-semibold text-zinc-900">
             Learno
           </span>
-
         </div>
 
         {/* Header */}
         <div className="flex flex-col items-center gap-1 text-center">
-
           <h1 className="text-2xl font-bold text-zinc-900">
             Create your account
           </h1>
@@ -173,7 +253,6 @@ function Register() {
           <p className="text-sm text-zinc-600">
             Sign up to get started
           </p>
-
         </div>
 
         {/* Error Message */}
@@ -196,7 +275,6 @@ function Register() {
 
         {/* Name */}
         <div className="flex flex-col gap-2">
-
           <label
             htmlFor="name"
             className="text-sm font-medium text-zinc-700"
@@ -227,12 +305,10 @@ function Register() {
               focus:ring-green-100
             "
           />
-
         </div>
 
         {/* Email */}
         <div className="flex flex-col gap-2">
-
           <label
             htmlFor="email"
             className="text-sm font-medium text-zinc-700"
@@ -263,12 +339,10 @@ function Register() {
               focus:ring-green-100
             "
           />
-
         </div>
 
         {/* Password */}
         <div className="flex flex-col gap-2">
-
           <label
             htmlFor="password"
             className="text-sm font-medium text-zinc-700"
@@ -299,7 +373,6 @@ function Register() {
               focus:ring-green-100
             "
           />
-
         </div>
 
         {/* Submit */}
@@ -319,23 +392,30 @@ function Register() {
             disabled:opacity-60
           "
         >
-          {loading ? "Creating account..." : "Sign Up"}
+          {loading
+            ? "Creating account..."
+            : "Sign Up"}
         </button>
 
         {/* Footer */}
         <p className="text-center text-sm text-zinc-600">
           Already have an account?{" "}
+
           <Link
             to="/login"
-            className="font-medium text-green-700 hover:text-green-800"
+            className="
+              font-medium
+              text-green-700
+              hover:text-green-800
+            "
           >
             Log in
           </Link>
         </p>
-
       </form>
     </main>
   );
 }
 
 export default Register;
+

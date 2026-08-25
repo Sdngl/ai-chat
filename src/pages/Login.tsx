@@ -33,7 +33,7 @@ function Login() {
       console.log("Logged in user:", userCredential.user);
 
       // Login successful
-      navigate("/Dashboard");
+      navigate("/student/dashboard");
 
     } catch (error: any) {
       console.error(error);

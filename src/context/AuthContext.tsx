@@ -33,28 +33,46 @@ export function AuthProvider({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log("Auth listener started");
+
     const unsubscribe = onAuthStateChanged(
       auth,
       (currentUser) => {
+        console.log("Firebase auth state:", currentUser);
+
         setUser(currentUser);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Auth state error:", error);
+
+        setUser(null);
         setLoading(false);
       }
     );
 
-    return unsubscribe;
+    return () => {
+      console.log("Auth listener cleaned up");
+      unsubscribe();
+    };
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
 
-  if (!context) {
+  if (context === undefined) {
     throw new Error(
       "useAuth must be used inside an AuthProvider"
     );
