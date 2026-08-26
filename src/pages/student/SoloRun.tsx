@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import {
@@ -68,7 +68,7 @@ function SoloRun() {
   const currentQuestion: QuizQuestion | undefined = questions[currentIndex];
   const progress = ((currentIndex + 1) / totalQuestions) * 100;
 
-  const finishRun = (
+  const finishRun = useCallback((
     finalScore: number,
     finalCorrect: number,
     finalWrong: number,
@@ -94,9 +94,9 @@ function SoloRun() {
         result,
       },
     });
-  };
+  }, [navigate, topic]);
 
-  const moveNext = (
+  const moveNext = useCallback((
     nextLives: number,
     nextScore: number,
     nextCorrect: number,
@@ -116,9 +116,9 @@ function SoloRun() {
       setFeedback(null);
       setTimeLeft(questionTime);
     }, 900);
-  };
+  }, [currentIndex, finishRun]);
 
-  const markWrong = (reason: "wrong" | "timeout") => {
+  const markWrong = useCallback((reason: "wrong" | "timeout") => {
     if (!currentQuestion || feedback) {
       return;
     }
@@ -131,7 +131,7 @@ function SoloRun() {
     setLives(nextLives);
     setWrong(nextWrong);
     moveNext(nextLives, score, correct, nextWrong, bestCombo);
-  };
+  }, [bestCombo, correct, currentQuestion, feedback, lives, moveNext, score, wrong]);
 
   const handleAnswer = (answer: string) => {
     if (!currentQuestion || feedback) {
@@ -166,7 +166,7 @@ function SoloRun() {
     }
 
     if (timeLeft <= 0) {
-      markWrong("timeout");
+      window.setTimeout(() => markWrong("timeout"), 0);
       return;
     }
 
@@ -175,7 +175,7 @@ function SoloRun() {
     }, 1000);
 
     return () => window.clearTimeout(timer);
-  }, [feedback, timeLeft]);
+  }, [feedback, markWrong, timeLeft]);
 
   if (!currentQuestion) {
     return null;

@@ -1,41 +1,7 @@
 import { Link } from "react-router-dom";
+import { courses } from "../../data/courses";
 
 function Courses() {
-  const courses = [
-    {
-      id: "react-fundamentals",
-      title: "React Fundamentals",
-      category: "Web Development",
-      level: "Beginner",
-      lessons: 24,
-      students: 1240,
-    },
-    {
-      id: "python-programming",
-      title: "Python Programming",
-      category: "Programming",
-      level: "Beginner",
-      lessons: 30,
-      students: 980,
-    },
-    {
-      id: "database-management",
-      title: "Database Management",
-      category: "Database",
-      level: "Intermediate",
-      lessons: 20,
-      students: 760,
-    },
-    {
-      id: "javascript",
-      title: "JavaScript Essentials",
-      category: "Web Development",
-      level: "Intermediate",
-      lessons: 28,
-      students: 850,
-    },
-  ];
-
   return (
     <div>
       <div>
@@ -80,7 +46,7 @@ function Courses() {
 
               <div className="mt-3 flex gap-4 text-sm text-gray-500">
                 <span>{course.level}</span>
-                <span>{course.lessons} lessons</span>
+                <span>{course.lessons.length} lessons</span>
               </div>
 
               <p className="mt-3 text-sm text-gray-500">

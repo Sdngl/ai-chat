@@ -23,6 +23,8 @@ import Progress from "./pages/students/Progress";
 import Quiz from "./pages/students/Quiz";
 import Profile from "./pages/students/Profile";
 import Settings from "./pages/students/Setting";
+import Companion from "./pages/students/Companion";
+import SkillMapPage from "./pages/students/SkillMapPage";
 import QuizArena from "./pages/student/QuizArena";
 import SoloRun from "./pages/student/SoloRun";
 import QuizResults from "./pages/student/QuizResults";
@@ -57,6 +59,8 @@ function App() {
             <Route path="learning" element={<MyLearning />} />
             <Route path="progress" element={<Progress />} />
             <Route path="quiz" element={<Quiz />} />
+            <Route path="map" element={<SkillMapPage />} />
+            <Route path="companion" element={<Companion />} />
             <Route path="arena" element={<QuizArena />} />
             <Route path="arena/solo" element={<SoloRun />} />
             <Route path="arena/results" element={<QuizResults />} />

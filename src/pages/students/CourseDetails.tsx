@@ -1,16 +1,9 @@
 import { Link, useParams } from "react-router-dom";
+import { getCourseById } from "../../data/courses";
 
 function CourseDetails() {
   const { id } = useParams();
-
-  const lessons = [
-    "Introduction",
-    "Understanding Components",
-    "Props and State",
-    "Event Handling",
-    "Working with Forms",
-    "Final Project",
-  ];
+  const course = getCourseById(id);
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -20,18 +13,17 @@ function CourseDetails() {
         </p>
 
         <h1 className="mt-2 text-3xl font-bold">
-          React Fundamentals
+          {course.title}
         </h1>
 
         <p className="mt-3 max-w-2xl text-green-100">
-          Learn the fundamentals of React and build modern interactive
-          web applications.
+          {course.description}
         </p>
 
         <div className="mt-6 flex flex-wrap gap-5 text-sm">
-          <span>24 Lessons</span>
-          <span>Beginner</span>
-          <span>72% Complete</span>
+          <span>{course.lessons.length} Lessons</span>
+          <span>{course.level}</span>
+          <span>{course.progress}% Complete</span>
         </div>
       </div>
 
@@ -40,9 +32,9 @@ function CourseDetails() {
           <h2 className="text-2xl font-bold">Course Content</h2>
 
           <div className="mt-4 space-y-3">
-            {lessons.map((lesson, index) => (
+            {course.lessons.map((lesson, index) => (
               <Link
-                key={lesson}
+                key={lesson.id}
                 to={`/student/lesson/${index + 1}`}
                 className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4 hover:border-green-300"
               >
@@ -51,10 +43,15 @@ function CourseDetails() {
                     {index + 1}
                   </span>
 
-                  <span className="font-medium">{lesson}</span>
+                  <div>
+                    <span className="font-medium">{lesson.title}</span>
+                    <p className="mt-1 text-sm text-gray-500">{lesson.duration}</p>
+                  </div>
                 </div>
 
-                <span className="text-sm text-gray-400">→</span>
+                <span className="text-sm text-gray-400">
+                  {lesson.completed ? "Done" : "Start"}
+                </span>
               </Link>
             ))}
           </div>
@@ -64,11 +61,14 @@ function CourseDetails() {
           <h3 className="font-bold">Your Progress</h3>
 
           <div className="mt-4 h-3 rounded-full bg-gray-100">
-            <div className="h-3 w-[72%] rounded-full bg-green-600" />
+            <div
+              className="h-3 rounded-full bg-green-600"
+              style={{ width: `${course.progress}%` }}
+            />
           </div>
 
           <p className="mt-2 text-sm text-gray-500">
-            72% completed
+            {course.progress}% completed
           </p>
 
           <Link

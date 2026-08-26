@@ -1,24 +1,7 @@
 import { Link } from "react-router-dom";
+import { courses } from "../../data/courses";
 
 function MyLearning() {
-  const courses = [
-    {
-      title: "React Fundamentals",
-      progress: 72,
-      status: "In Progress",
-    },
-    {
-      title: "Python Programming",
-      progress: 45,
-      status: "In Progress",
-    },
-    {
-      title: "HTML & CSS",
-      progress: 100,
-      status: "Completed",
-    },
-  ];
-
   return (
     <div>
       <h1 className="text-3xl font-bold">My Learning</h1>
@@ -38,7 +21,7 @@ function MyLearning() {
                 <h2 className="font-bold">{course.title}</h2>
 
                 <p className="mt-1 text-sm text-gray-500">
-                  {course.status}
+                  {course.progress >= 100 ? "Completed" : "In Progress"}
                 </p>
               </div>
 
@@ -56,7 +39,7 @@ function MyLearning() {
 
             {course.progress < 100 && (
               <Link
-                to="/student/course/react-fundamentals"
+                to={`/student/course/${course.id}`}
                 className="mt-4 inline-block text-sm font-semibold text-green-600"
               >
                 Continue →

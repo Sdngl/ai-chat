@@ -2,7 +2,12 @@ import { useNavigate, Link } from "react-router-dom";
 import { signOut } from "firebase/auth";
 
 import { auth } from "../../firebase/Config";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
+import CompanionCard from "../../components/companion/CompanionCard";
+import SkillMap from "../../components/skill-map/SkillMap";
+import { companionState, dailyQuests } from "../../data/companion";
+import { courses } from "../../data/courses";
+import { skillRegions } from "../../data/skillMap";
 
 function Dashboard() {
   const { user } = useAuth();
@@ -16,27 +21,6 @@ function Dashboard() {
       console.error("Logout error:", error);
     }
   };
-
-  const courses = [
-    {
-      title: "React Fundamentals",
-      category: "Web Development",
-      progress: 72,
-      lessons: 24,
-    },
-    {
-      title: "Python Programming",
-      category: "Programming",
-      progress: 45,
-      lessons: 30,
-    },
-    {
-      title: "Database Management",
-      category: "Database",
-      progress: 28,
-      lessons: 20,
-    },
-  ];
 
   return (
     <div className="space-y-8">
@@ -57,6 +41,29 @@ function Dashboard() {
         <p className="mt-1 text-sm text-gray-400">
           {user?.email}
         </p>
+      </section>
+
+      <CompanionCard companion={companionState} compact />
+
+      <section>
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+          <div>
+            <p className="text-sm font-semibold text-green-600">NEXT QUEST</p>
+            <h2 className="mt-1 text-xl font-bold">{dailyQuests[0].title}</h2>
+            <p className="mt-1 text-sm text-gray-500">{dailyQuests[0].description}</p>
+          </div>
+
+          <Link
+            to="/student/map"
+            className="rounded-xl border border-green-200 bg-green-50 px-5 py-3 text-center text-sm font-semibold text-green-700 transition hover:bg-green-100"
+          >
+            Continue Adventure
+          </Link>
+        </div>
+
+        <div className="mt-5">
+          <SkillMap regions={skillRegions.slice(0, 1)} />
+        </div>
       </section>
 
       {/* Continue Learning */}
@@ -180,11 +187,11 @@ function Dashboard() {
                 </div>
 
                 <p className="mt-3 text-sm text-gray-500">
-                  {course.lessons} lessons
+                  {course.lessons.length} lessons
                 </p>
 
                 <Link
-                  to="/student/course/react-fundamentals"
+                  to={`/student/course/${course.id}`}
                   className="mt-4 block rounded-xl bg-gray-50 px-4 py-3 text-center text-sm font-semibold text-gray-700 transition hover:bg-green-50 hover:text-green-600"
                 >
                   Continue

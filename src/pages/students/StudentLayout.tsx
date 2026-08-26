@@ -3,9 +3,11 @@ import { NavLink, Outlet } from "react-router-dom";
 function StudentLayout() {
   const navItems = [
     { name: "Dashboard", path: "/student/dashboard", icon: "⌂" },
+    { name: "Skill Map", path: "/student/map", icon: "◇" },
+    { name: "Companion", path: "/student/companion", icon: "◌" },
     { name: "Courses", path: "/student/courses", icon: "▣" },
     { name: "My Learning", path: "/student/learning", icon: "◉" },
-    { name: "⚔️ Quiz Arena", path: "/student/arena", icon: "⚔️" },
+    { name: "Quiz Arena", path: "/student/arena", icon: "⚔️" },
     { name: "Progress", path: "/student/progress", icon: "↗" },
     { name: "Profile", path: "/student/profile", icon: "○" },
     { name: "Settings", path: "/student/settings", icon: "⚙" },

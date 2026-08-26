@@ -4,6 +4,14 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 
 import { auth } from "../firebase/Config";
 
+function getFirebaseErrorCode(error: unknown) {
+  if (typeof error === "object" && error !== null && "code" in error) {
+    return String((error as { code: unknown }).code);
+  }
+
+  return "";
+}
+
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,10 +43,10 @@ function Login() {
       // Login successful
       navigate("/student/dashboard");
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
 
-      switch (error.code) {
+      switch (getFirebaseErrorCode(error)) {
         case "auth/invalid-credential":
           setError("Invalid email or password.");
           break;
