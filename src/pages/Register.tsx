@@ -8,13 +8,8 @@ import {
   signOut,
 } from "firebase/auth";
 
-import {
-  doc,
-  setDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-
-import { auth, db } from "../firebase/Config";
+import { auth } from "../firebase/Config";
+import { createUserProfileIfMissing } from "../services/userService";
 
 function Register() {
   const [name, setName] = useState("");
@@ -85,10 +80,10 @@ function Register() {
           "5. Creating Firestore user profile..."
         );
 
-        await setDoc(doc(db, "users", user.uid), {
-          name: name.trim(),
+        await createUserProfileIfMissing({
+          uid: user.uid,
+          displayName: name.trim(),
           email: user.email,
-          createdAt: serverTimestamp(),
         });
 
         console.log(
@@ -418,4 +413,3 @@ function Register() {
 }
 
 export default Register;
-

@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { signOut } from "firebase/auth";
 
@@ -8,10 +9,41 @@ import SkillMap from "../../components/skill-map/SkillMap";
 import { companionState, dailyQuests } from "../../data/companion";
 import { courses } from "../../data/courses";
 import { skillRegions } from "../../data/skillMap";
+import { subscribeUserProfile } from "../../services/userService";
+import { getNextLevelXp } from "../../utils/levelLogic";
+import type { UserProfile } from "../../types/user";
 
 function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileError, setProfileError] = useState("");
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    return subscribeUserProfile(
+      user.uid,
+      setProfile,
+      () => setProfileError("Unable to load saved progress right now.")
+    );
+  }, [user]);
+
+  const persistedCompanion = useMemo(
+    () =>
+      profile
+        ? {
+            ...companionState,
+            level: profile.level,
+            xp: profile.xp,
+            nextLevelXp: getNextLevelXp(profile.level),
+            streak: profile.streak,
+          }
+        : companionState,
+    [profile]
+  );
 
   const handleLogout = async () => {
     try {
@@ -43,7 +75,13 @@ function Dashboard() {
         </p>
       </section>
 
-      <CompanionCard companion={companionState} compact />
+      {profileError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {profileError}
+        </div>
+      )}
+
+      <CompanionCard companion={persistedCompanion} compact />
 
       <section>
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
@@ -110,10 +148,10 @@ function Dashboard() {
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            ["12", "Courses Enrolled"],
-            ["72%", "Avg. Progress"],
-            ["24.5h", "Learning Time"],
-            ["7", "Day Streak"],
+            [String(courses.length), "Courses Enrolled"],
+            [`${profile?.level ?? 1}`, "Player Level"],
+            [`${profile?.coins ?? 0}`, "Coins"],
+            [`${profile?.streak ?? 0}`, "Day Streak"],
           ].map(([value, label]) => (
             <div
               key={label}

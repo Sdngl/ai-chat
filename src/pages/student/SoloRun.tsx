@@ -9,6 +9,7 @@ import {
 } from "../../data/quizQuestions";
 
 interface ArenaResult {
+  runId: string;
   topic: QuizTopic;
   score: number;
   correct: number;
@@ -78,6 +79,7 @@ function SoloRun() {
     const xp = Math.round(finalScore / 12 + finalCorrect * 8 + finalBestCombo * 5);
     const coins = Math.round(finalScore / 60 + finalCorrect * 2 + accuracy * 10);
     const result: ArenaResult = {
+      runId: crypto.randomUUID(),
       topic,
       score: finalScore,
       correct: finalCorrect,

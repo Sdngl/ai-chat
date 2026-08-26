@@ -1,9 +1,30 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+
+import { useAuth } from "../../context/useAuth";
 import { getCourseById } from "../../data/courses";
+import { getCourseProgress } from "../../services/progressService";
+import type { CourseProgress } from "../../types/progress";
 
 function CourseDetails() {
   const { id } = useParams();
+  const { user } = useAuth();
   const course = getCourseById(id);
+  const [savedProgress, setSavedProgress] = useState<CourseProgress | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    getCourseProgress(user.uid, course.id)
+      .then(setSavedProgress)
+      .catch((error: unknown) => {
+        console.error("Unable to load course progress:", error);
+      });
+  }, [course.id, user]);
+
+  const progress = savedProgress?.progressPercentage ?? course.progress;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -23,7 +44,7 @@ function CourseDetails() {
         <div className="mt-6 flex flex-wrap gap-5 text-sm">
           <span>{course.lessons.length} Lessons</span>
           <span>{course.level}</span>
-          <span>{course.progress}% Complete</span>
+          <span>{progress}% Complete</span>
         </div>
       </div>
 
@@ -50,7 +71,9 @@ function CourseDetails() {
                 </div>
 
                 <span className="text-sm text-gray-400">
-                  {lesson.completed ? "Done" : "Start"}
+                  {savedProgress?.completedLessons.includes(lesson.id) || lesson.completed
+                    ? "Done"
+                    : "Start"}
                 </span>
               </Link>
             ))}
@@ -63,12 +86,12 @@ function CourseDetails() {
           <div className="mt-4 h-3 rounded-full bg-gray-100">
             <div
               className="h-3 rounded-full bg-green-600"
-              style={{ width: `${course.progress}%` }}
+              style={{ width: `${progress}%` }}
             />
           </div>
 
           <p className="mt-2 text-sm text-gray-500">
-            {course.progress}% completed
+            {progress}% completed
           </p>
 
           <Link

@@ -1,6 +1,57 @@
+import { useEffect, useState } from "react";
+
+import { useAuth } from "../../context/useAuth";
 import { courses } from "../../data/courses";
+import { getCourseProgress } from "../../services/progressService";
+import { subscribeUserProfile } from "../../services/userService";
+import type { CourseProgress } from "../../types/progress";
+import type { UserProfile } from "../../types/user";
 
 function Progress() {
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [courseProgress, setCourseProgress] = useState<Record<string, CourseProgress>>({});
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    return subscribeUserProfile(
+      user.uid,
+      setProfile,
+      () => setError("Unable to load player stats.")
+    );
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    Promise.all(
+      courses.map(
+        async (course) =>
+          [course.id, await getCourseProgress(user.uid, course.id)] as const
+      )
+    )
+      .then((items) => {
+        const savedProgress: Record<string, CourseProgress> = {};
+
+        items.forEach(([courseId, progress]) => {
+          if (progress) {
+            savedProgress[courseId] = progress;
+          }
+        });
+
+        setCourseProgress(
+          savedProgress
+        );
+      })
+      .catch(() => setError("Unable to load course progress."));
+  }, [user]);
+
   return (
     <div>
       <h1 className="text-3xl font-bold">My Progress</h1>
@@ -9,12 +60,18 @@ function Progress() {
         Track your learning progress and achievements.
       </p>
 
+      {error && (
+        <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
+
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          ["72%", "Overall Progress"],
-          ["24.5h", "Learning Time"],
-          ["18", "Lessons Completed"],
-          ["7", "Day Streak"],
+          [`${profile?.xp ?? 0}`, "Total XP"],
+          [`${profile?.level ?? 1}`, "Level"],
+          [`${profile?.totalCorrectAnswers ?? 0}`, "Correct Answers"],
+          [`${profile?.longestStreak ?? 0}`, "Longest Streak"],
         ].map(([value, label]) => (
           <div
             key={label}
@@ -32,17 +89,26 @@ function Progress() {
         <div className="mt-6 space-y-6">
           {courses.map((course) => (
             <div key={course.id}>
+              {(() => {
+                const persistedProgress = courseProgress[course.id];
+                const percent = persistedProgress?.progressPercentage ?? course.progress;
+
+                return (
+                  <>
               <div className="flex justify-between text-sm">
                 <span className="font-medium">{course.title}</span>
-                <span className="text-gray-500">{course.progress}%</span>
+                <span className="text-gray-500">{percent}%</span>
               </div>
 
               <div className="mt-2 h-2 rounded-full bg-gray-100">
                 <div
                   className="h-2 rounded-full bg-green-600"
-                  style={{ width: `${course.progress}%` }}
+                  style={{ width: `${percent}%` }}
                 />
               </div>
+                  </>
+                );
+              })()}
             </div>
           ))}
         </div>
