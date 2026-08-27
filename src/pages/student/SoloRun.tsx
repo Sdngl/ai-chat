@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import {
@@ -7,6 +7,8 @@ import {
   type QuizQuestion,
   type QuizTopic,
 } from "../../data/quizQuestions";
+import { useAuth } from "../../context/useAuth";
+import { completeSoloRun } from "../../services/progressService";
 
 interface ArenaResult {
   runId: string;
@@ -39,8 +41,10 @@ function isQuizTopic(topic: unknown): topic is QuizTopic {
 function SoloRun() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const state = location.state as LocationState | null;
   const topic = isQuizTopic(state?.topic) ? state.topic : "React";
+  const completionStarted = useRef(false);
 
   const questions = useMemo(() => {
     return shuffleItems(
@@ -62,6 +66,7 @@ function SoloRun() {
   const [wrong, setWrong] = useState(0);
   const [timeLeft, setTimeLeft] = useState(questionTime);
   const [selectedAnswer, setSelectedAnswer] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [feedback, setFeedback] = useState<"correct" | "wrong" | "timeout" | null>(
     null
   );
@@ -69,12 +74,18 @@ function SoloRun() {
   const currentQuestion: QuizQuestion | undefined = questions[currentIndex];
   const progress = ((currentIndex + 1) / totalQuestions) * 100;
 
-  const finishRun = useCallback((
+  const finishRun = useCallback(async (
     finalScore: number,
     finalCorrect: number,
     finalWrong: number,
     finalBestCombo: number
   ) => {
+    if (completionStarted.current) {
+      return;
+    }
+
+    completionStarted.current = true;
+
     const accuracy = finalCorrect / totalQuestions;
     const xp = Math.round(finalScore / 12 + finalCorrect * 8 + finalBestCombo * 5);
     const coins = Math.round(finalScore / 60 + finalCorrect * 2 + accuracy * 10);
@@ -90,13 +101,42 @@ function SoloRun() {
       coins,
     };
 
+    console.log("Firebase auth user at quiz completion:", user);
+    console.log("Quiz completion event:", {
+      uid: user?.uid,
+      score: finalScore,
+      correct: finalCorrect,
+      xp,
+      coins,
+      runId: result.runId,
+    });
+
+    if (!user) {
+      setSaveError("Sign in again to save your progress.");
+      return;
+    }
+
+    try {
+      const updatedProfile = await completeSoloRun(user.uid, result, {
+        displayName: user.displayName ?? "Student",
+        email: user.email,
+      });
+
+      console.log("Player state update:", updatedProfile);
+    } catch (error) {
+      console.error("Firestore write error:", error);
+      setSaveError("Could not save progress. Please try again.");
+      completionStarted.current = false;
+      return;
+    }
+
     navigate("/student/arena/results", {
       replace: true,
       state: {
         result,
       },
     });
-  }, [navigate, topic]);
+  }, [navigate, topic, user]);
 
   const moveNext = useCallback((
     nextLives: number,
@@ -109,7 +149,7 @@ function SoloRun() {
 
     window.setTimeout(() => {
       if (isLastQuestion || nextLives <= 0) {
-        finishRun(nextScore, nextCorrect, nextWrong, nextBestCombo);
+        void finishRun(nextScore, nextCorrect, nextWrong, nextBestCombo);
         return;
       }
 
@@ -183,8 +223,22 @@ function SoloRun() {
     return null;
   }
 
+  if (authLoading) {
+    return (
+      <div className="mx-auto max-w-4xl rounded-2xl border border-gray-200 bg-white p-6 text-sm text-gray-500">
+        Loading quiz...
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
+      {saveError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {saveError}
+        </div>
+      )}
+
       <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-gray-200">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>

@@ -78,56 +78,102 @@ export async function markCourseQuizCompleted(
   );
 }
 
-export async function completeSoloRun(uid: string, result: SoloRunResult) {
+interface CompleteSoloRunUserInfo {
+  displayName: string;
+  email: string | null;
+}
+
+export async function completeSoloRun(
+  uid: string,
+  result: SoloRunResult,
+  userInfo?: CompleteSoloRunUserInfo
+) {
   const userRef = doc(db, "users", uid);
   const runRef = doc(db, "users", uid, "quizRuns", result.runId);
+
+  console.log("Solo run completion started", {
+    uid,
+    runId: result.runId,
+    score: result.score,
+    correct: result.correct,
+    xp: result.xp,
+    coins: result.coins,
+    userPath: `users/${uid}`,
+  });
 
   const updatedProfile = await runTransaction(db, async (transaction) => {
     const runSnapshot = await transaction.get(runRef);
 
     if (runSnapshot.exists()) {
+      console.log("Solo run already processed", {
+        uid,
+        runId: result.runId,
+      });
+
       return null;
     }
 
     const userSnapshot = await transaction.get(userRef);
 
-    if (!userSnapshot.exists()) {
-      throw new Error("User profile does not exist.");
-    }
-
     const profile = {
       ...initialGameStats,
       uid,
-      ...userSnapshot.data(),
+      displayName: userInfo?.displayName ?? "",
+      email: userInfo?.email ?? "",
+      ...(userSnapshot.exists() ? userSnapshot.data() : {}),
     } as UserProfile;
 
     const nextXp = profile.xp + result.xp;
     const nextLevel = getLevelFromXp(nextXp);
     const nextBestScore = Math.max(profile.bestScore, result.score);
     const nextBestCombo = Math.max(profile.bestCombo, result.bestCombo);
+    const nextStreak = profile.streak > 0 ? profile.streak : 1;
+    const nextLongestStreak = Math.max(profile.longestStreak, nextStreak);
+
+    console.log("Solo run calculated stats", {
+      uid,
+      runId: result.runId,
+      finalScore: result.score,
+      correctAnswers: result.correct,
+      xpEarned: result.xp,
+      coinsEarned: result.coins,
+      newLevel: nextLevel,
+      userPath: `users/${uid}`,
+    });
 
     transaction.set(runRef, {
       ...result,
       processedAt: serverTimestamp(),
     });
 
-    transaction.update(userRef, {
-      xp: increment(result.xp),
-      coins: increment(result.coins),
-      totalQuizzes: increment(1),
-      totalQuestions: increment(result.total),
-      totalCorrectAnswers: increment(result.correct),
-      level: nextLevel,
-      bestScore: nextBestScore,
-      bestCombo: nextBestCombo,
-      updatedAt: serverTimestamp(),
-    });
+    transaction.set(
+      userRef,
+      {
+        displayName: profile.displayName,
+        email: profile.email,
+        xp: increment(result.xp),
+        coins: increment(result.coins),
+        streak: nextStreak,
+        longestStreak: nextLongestStreak,
+        totalQuizzes: increment(1),
+        totalQuestions: increment(result.total),
+        totalCorrectAnswers: increment(result.correct),
+        level: nextLevel,
+        bestScore: nextBestScore,
+        bestCombo: nextBestCombo,
+        createdAt: userSnapshot.exists() ? profile.createdAt : serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
 
     return {
       ...profile,
       xp: nextXp,
       level: nextLevel,
       coins: profile.coins + result.coins,
+      streak: nextStreak,
+      longestStreak: nextLongestStreak,
       totalQuizzes: profile.totalQuizzes + 1,
       totalQuestions: profile.totalQuestions + result.total,
       totalCorrectAnswers: profile.totalCorrectAnswers + result.correct,
@@ -142,6 +188,13 @@ export async function completeSoloRun(uid: string, result: SoloRunResult) {
     if (result.correct === result.total) {
       await unlockAchievement(uid, "perfect-score");
     }
+
+    console.log("Solo run progress saved", {
+      uid,
+      runId: result.runId,
+      userPath: `users/${uid}`,
+      level: updatedProfile.level,
+    });
   }
 
   return updatedProfile;

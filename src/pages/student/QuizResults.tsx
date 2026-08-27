@@ -1,9 +1,6 @@
-import { useEffect, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 
 import { type QuizTopic } from "../../data/quizQuestions";
-import { useAuth } from "../../context/useAuth";
-import { completeSoloRun } from "../../services/progressService";
 
 interface ArenaResult {
   runId: string;
@@ -23,40 +20,8 @@ interface LocationState {
 
 function QuizResults() {
   const location = useLocation();
-  const { user } = useAuth();
   const state = location.state as LocationState | null;
   const result = state?.result;
-  const [saveStatus, setSaveStatus] = useState<"saving" | "saved" | "error">(
-    "saving"
-  );
-  const [saveError, setSaveError] = useState("");
-
-  useEffect(() => {
-    if (!user || !result) {
-      return;
-    }
-
-    let isMounted = true;
-
-    completeSoloRun(user.uid, result)
-      .then(() => {
-        if (isMounted) {
-          setSaveStatus("saved");
-        }
-      })
-      .catch((error: unknown) => {
-        console.error("Unable to save solo run:", error);
-
-        if (isMounted) {
-          setSaveStatus("error");
-          setSaveError("Your result is shown, but progress could not be saved.");
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [result, user]);
 
   if (!result) {
     return <Navigate to="/student/arena" replace />;
@@ -91,11 +56,7 @@ function QuizResults() {
           </p>
 
           <p className="mt-2 text-sm text-green-100">
-            {saveStatus === "saving"
-              ? "Saving progress..."
-              : saveStatus === "saved"
-                ? "Progress saved to your profile."
-                : saveError}
+            Progress saved to your profile.
           </p>
 
           <p className="mt-6 text-6xl font-bold">{result.score}</p>

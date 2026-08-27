@@ -32,16 +32,27 @@ export async function createUserProfileIfMissing(input: CreateUserProfileInput) 
   const snapshot = await getDoc(userRef);
 
   if (snapshot.exists()) {
-    return;
+    return {
+      ...initialGameStats,
+      uid: input.uid,
+      ...snapshot.data(),
+    } as UserProfile;
   }
 
-  await setDoc(userRef, {
+  const profile = {
     displayName: input.displayName,
     email: input.email ?? "",
     ...initialGameStats,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  });
+  };
+
+  await setDoc(userRef, profile);
+
+  return {
+    ...profile,
+    uid: input.uid,
+  } as UserProfile;
 }
 
 export async function getUserProfile(uid: string) {
