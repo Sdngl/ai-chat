@@ -5,6 +5,7 @@ import { type QuizTopic } from "../../data/quizQuestions";
 interface ArenaResult {
   runId: string;
   topic: QuizTopic;
+  status?: "completed" | "game_over";
   score: number;
   correct: number;
   wrong: number;
@@ -28,6 +29,7 @@ function QuizResults() {
   }
 
   const accuracy = Math.round((result.correct / result.total) * 100);
+  const isGameOver = result.status === "game_over";
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -46,10 +48,12 @@ function QuizResults() {
 
         <div className="relative">
           <p className="text-sm font-semibold text-green-100">
-            RUN COMPLETE
+            {isGameOver ? "GAME OVER" : "RUN COMPLETE"}
           </p>
 
-          <h1 className="mt-2 text-4xl font-bold">Victory Results</h1>
+          <h1 className="mt-2 text-4xl font-bold">
+            {isGameOver ? "Run Results" : "Victory Results"}
+          </h1>
 
           <p className="mt-3 text-green-50">
             {result.topic} arena score locked in for this frontend run.
@@ -67,8 +71,8 @@ function QuizResults() {
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           [`${accuracy}%`, "Accuracy"],
+          [String(result.total), "Answered"],
           [String(result.correct), "Correct"],
-          [String(result.wrong), "Wrong"],
           [`x${result.bestCombo}`, "Best Combo"],
         ].map(([value, label]) => (
           <div
@@ -103,14 +107,14 @@ function QuizResults() {
           state={{ topic: result.topic }}
           className="flex-1 rounded-xl bg-green-600 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-green-700"
         >
-          Play Again
+          {isGameOver ? "Try Again" : "Play Again"}
         </Link>
 
         <Link
           to="/student/arena"
           className="flex-1 rounded-xl border border-gray-200 bg-white px-5 py-3 text-center text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
         >
-          Back to Arena
+          {isGameOver ? "Quit" : "Back to Arena"}
         </Link>
       </div>
     </div>

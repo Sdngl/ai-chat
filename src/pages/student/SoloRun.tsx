@@ -13,6 +13,7 @@ import { completeSoloRun } from "../../services/progressService";
 interface ArenaResult {
   runId: string;
   topic: QuizTopic;
+  status: "completed" | "game_over";
   score: number;
   correct: number;
   wrong: number;
@@ -75,6 +76,7 @@ function SoloRun() {
   const progress = ((currentIndex + 1) / totalQuestions) * 100;
 
   const finishRun = useCallback(async (
+    status: ArenaResult["status"],
     finalScore: number,
     finalCorrect: number,
     finalWrong: number,
@@ -86,16 +88,18 @@ function SoloRun() {
 
     completionStarted.current = true;
 
-    const accuracy = finalCorrect / totalQuestions;
+    const questionsAnswered = finalCorrect + finalWrong;
+    const accuracy = questionsAnswered > 0 ? finalCorrect / questionsAnswered : 0;
     const xp = Math.round(finalScore / 12 + finalCorrect * 8 + finalBestCombo * 5);
     const coins = Math.round(finalScore / 60 + finalCorrect * 2 + accuracy * 10);
     const result: ArenaResult = {
       runId: crypto.randomUUID(),
       topic,
+      status,
       score: finalScore,
       correct: finalCorrect,
       wrong: finalWrong,
-      total: totalQuestions,
+      total: questionsAnswered,
       bestCombo: finalBestCombo,
       xp,
       coins,
@@ -106,28 +110,28 @@ function SoloRun() {
       uid: user?.uid,
       score: finalScore,
       correct: finalCorrect,
+      questionsAnswered,
       xp,
       coins,
       runId: result.runId,
+      status,
     });
 
     if (!user) {
       setSaveError("Sign in again to save your progress.");
-      return;
-    }
+    } else {
+      try {
+        const updatedProfile = await completeSoloRun(user.uid, result, {
+          displayName: user.displayName ?? "Student",
+          email: user.email,
+        });
 
-    try {
-      const updatedProfile = await completeSoloRun(user.uid, result, {
-        displayName: user.displayName ?? "Student",
-        email: user.email,
-      });
-
-      console.log("Player state update:", updatedProfile);
-    } catch (error) {
-      console.error("Firestore write error:", error);
-      setSaveError("Could not save progress. Please try again.");
-      completionStarted.current = false;
-      return;
+        console.log("Player state update:", updatedProfile);
+      } catch (error) {
+        console.error("Firestore write error:", error);
+        setSaveError("Could not save progress. Please try again.");
+        completionStarted.current = false;
+      }
     }
 
     navigate("/student/arena/results", {
@@ -149,7 +153,13 @@ function SoloRun() {
 
     window.setTimeout(() => {
       if (isLastQuestion || nextLives <= 0) {
-        void finishRun(nextScore, nextCorrect, nextWrong, nextBestCombo);
+        void finishRun(
+          nextLives <= 0 ? "game_over" : "completed",
+          nextScore,
+          nextCorrect,
+          nextWrong,
+          nextBestCombo
+        );
         return;
       }
 
@@ -161,7 +171,7 @@ function SoloRun() {
   }, [currentIndex, finishRun]);
 
   const markWrong = useCallback((reason: "wrong" | "timeout") => {
-    if (!currentQuestion || feedback) {
+    if (!currentQuestion || feedback || lives <= 0 || completionStarted.current) {
       return;
     }
 
@@ -176,7 +186,7 @@ function SoloRun() {
   }, [bestCombo, correct, currentQuestion, feedback, lives, moveNext, score, wrong]);
 
   const handleAnswer = (answer: string) => {
-    if (!currentQuestion || feedback) {
+    if (!currentQuestion || feedback || lives <= 0 || completionStarted.current) {
       return;
     }
 

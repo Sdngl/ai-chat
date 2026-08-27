@@ -12,6 +12,7 @@ export interface CourseProgress {
 export interface SoloRunResult {
   runId: string;
   topic: QuizTopic;
+  status: "completed" | "game_over";
   score: number;
   correct: number;
   wrong: number;
